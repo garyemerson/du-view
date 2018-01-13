@@ -1,0 +1,6 @@
+[package]
+name = "du-view"
+version = "0.1.0"
+authors = ["garyemerson <gmohammadioun@gmail.com>"]
+
+[dependencies]
