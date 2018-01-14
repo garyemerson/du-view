@@ -1,0 +1,16 @@
+{
+	"build_systems":
+	[
+		{
+			"name": "Run Project",
+			"shell_cmd": "cd /Users/Garrett/Dropbox/Files/workspaces/du-view && /Users/Garrett/.cargo/bin/cargo run > du-view.html && open du-view.html",
+			"syntax": "build_results.sublime-syntax"
+		}
+	],
+	"folders":
+	[
+		{
+			"path": "."
+		}
+	]
+}

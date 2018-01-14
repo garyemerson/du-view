@@ -1,0 +1,29 @@
+.item_row {
+    width: 100%;
+}
+.item {
+    padding-left: 20px;
+    margin: 5px;
+    border: 1px solid #444;
+}
+.children {
+    padding: 0;
+    list-style: none;
+    display: none;
+}
+.arrow {
+    display: inline-block;
+    margin: 16px 0;
+    width: 15px;
+    height: 20px;
+    background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='15' height='20'><polygon points='0,4 10,10 0,16' fill='#b8b4b4' /></svg>") no-repeat;
+}
+.size {
+    font-family: monospace;
+    color: #7c7c7c;
+    padding-left: 7px;
+}
+p {
+    display: inline-block;
+    vertical-align: top;
+}

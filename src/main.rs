@@ -10,72 +10,39 @@ fn main() {
     match run_and_get_output() {
         Ok(output) => {
             // println!("{}", output);
-            let mut html = "
-<!doctype html>
-<html lang=\"en-US\">
-<head>
-    <title>du view</title>
-    <style>
-        .item_row {
-            width: 100%;
-        }
-        .item {
-            padding-left: 20px;
-            margin: 5px;
-            border: 1px solid #444;
-        }
-        ul {
-            padding: 0;
-            list-style: none;
-            display: none;
-        }
-        .size {
-            font-family: monospace;
-            color: #7c7c7c;
-            padding-left: 7px;
-        }
-        p {
-            display: inline-block;
-            vertical-align: top;
-        }
-        svg {
-            margin: 16px 0;
-        }
-    </style>    
-</head>
-".to_string();
-            html.push_str("\n<body>\n");
             let parsed_info = parse_output(output);
-            // html.push_str(&process_output_to_html(output));
-            html.push_str(
-                &get_html_elems(
+            let html_output = get_html_elems(
                     &(".".to_string(), ".".to_string(), parsed_info.1),
                     &parsed_info.0,
                     0,
-                    &mut 0));
-            html.push_str(
-                &format!(
-"</body>
+                    &mut 0);
+            let tree = get_hierarchy_obj(
+                    &(".".to_string(), ".".to_string(), parsed_info.1),
+                    &parsed_info.0,
+                    1,
+                    &mut 0);
 
+            println!("
+<!doctype html>
+<html lang=\"en-US\">
+<head>
+  <title>du view</title>
+  <style>
+{css}
+  </style>
+</head>
+<body onkeydown=\"handleKey(event)\">
+{html_output}
+</body>
 <script>
-  function fillInParentProperties(tree, parent) {{
-    tree.parent = parent;
-    for (var i = 0; i < tree.children.length; i++) {{
-      fillInParentProperties(tree.children[i], tree);
-    }}
-  }}
-  var tree = {};
-  fillInParentProperties(tree, null);
-  console.log(tree);
+  var treeRoot = {tree};
+{js}
 </script>
-</html>
-",
-                    get_hierarchy_obj(
-                        &(".".to_string(), ".".to_string(), parsed_info.1),
-                        &parsed_info.0,
-                        1,
-                        &mut 0)));
-            println!("{}", html);
+</html>\n",
+                css = include_str!("style.css"),
+                html_output = html_output,
+                tree = tree,
+                js = include_str!("script.js"));
         },
         Err(err) => { println!("got err when running command and getting output: {}", err); },
     }
@@ -168,37 +135,45 @@ fn get_html_elems(
     unique_id: &mut usize) -> String
 {
     let indent = "  ".to_string().repeat(indent_level);
-    let mut html = format!(
-// {}  <svg width=\"20\" height=\"20\">   <polygon points=\"0,0 10,5 0,10\" />     <circle cx=\"10\" cy=\"10\" r=\"5\" stroke=\"green\" stroke-width=\"1\" fill=\"yellow\" /></svg>
-"{}<div id=\"item{}\" class=\"item\">
-{}  <div class=\"item_row\">
-{}    <svg width=\"15\" height=\"20\"><polygon points=\"0,4 10,10 0,16\" fill=\"#b8b4b4\" /></svg>
-{}    <p>{}<span class=\"size\">({})</span></p>
-{}  </div>
-",
-        indent,
-        unique_id,
-        indent,
-        indent,
-        indent,
-        root.1,
-        get_size_label(root.2),
-        indent);
+    let id = *unique_id;
     *unique_id += 1;
-    if let Some(children) = children_map.get(&root.0) {
-        html.push_str(&format!("{}  <ul>\n", indent));
-        for child in children {
-            html.push_str(
-                &format!("{}    <li>\n{}{}    </li>\n",
-                    indent,
-                    &get_html_elems(child, children_map, indent_level + 3, unique_id),
-                    indent));
-        }
-        html.push_str(&format!("{}  </ul>\n", indent))
-    }
-    html.push_str(&format!("{}</div>\n", "  ".to_string().repeat(indent_level)));
 
-    html
+
+    let children_elems = if let Some(children) = children_map.get(&root.0) {
+        children
+            .iter()
+            .map(|c|
+                format!("{i}    <li>\n{cc}{i}    </li>",
+                    i = indent,
+                    cc = &get_html_elems(c, children_map, indent_level + 3, unique_id)))
+            .collect::<Vec<String>>()
+            .join("\n")
+    } else {
+        "".to_string()
+    };
+
+    format!(
+"{i}<div id=\"item{id}\" class=\"item\">
+{i}  <div id=\"item_row{id}\" class=\"item_row\">
+{i}    <div id=\"arrow{id}\" class=\"arrow\"></div>
+{i}    <p>{name}<span class=\"size\">({size_label})</span></p>
+{i}  </div>
+{maybe_children}{i}</div>
+",
+        i = indent,
+        id = id,
+        name = root.1,
+        size_label = get_size_label(root.2),
+        maybe_children =
+            if children_elems == "" {
+                "".to_string()
+            } else {
+                format!(
+                    "{i}  <ul id=\"children{id}\" class=\"children\">\n{cc}\n{i}  </ul>\n",
+                    i = indent,
+                    id = id,
+                    cc = children_elems)
+            })
 }
 
 // fn print_indented(root: &String, children: &HashMap<String, Vec<String>>, indent_level: usize) {
