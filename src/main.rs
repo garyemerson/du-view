@@ -49,9 +49,10 @@ fn main() {
     }
 }
 
-fn parse_output(output: String) -> (HashMap<String, Vec<(String, String, i32)>>, i32) {
+// (children map, root size)
+fn parse_output(output: String) -> (HashMap<String, Vec<(String, String, u64)>>, u64) {
     // full path -> (full path, relative path, byte size)
-    let mut children: HashMap<String, Vec<(String, String, i32)>> = HashMap::new();
+    let mut children: HashMap<String, Vec<(String, String, u64)>> = HashMap::new();
     let re = Regex::new(r"(\d+)\s+(.*)").unwrap();
     let mut root_size = 0;
     for line in output.lines() {
@@ -66,9 +67,9 @@ fn parse_output(output: String) -> (HashMap<String, Vec<(String, String, i32)>>,
                 children.push(
                     (item.to_string(),
                      relative_item.to_string().trim_matches('/').to_string(),
-                     size.parse::<i32>().unwrap()));
+                     size.parse::<u64>().unwrap()));
             } else {
-                root_size = cap[1].parse::<i32>().unwrap();
+                root_size = cap[1].parse::<u64>().unwrap();
             }
         }
     }
@@ -76,8 +77,8 @@ fn parse_output(output: String) -> (HashMap<String, Vec<(String, String, i32)>>,
     (children, root_size)
 }
 
-fn get_size_label(num_bytes: i32) -> String {
-    let num_bytes_fl = num_bytes as f32;
+fn get_size_label(num_bytes: u64) -> String {
+    let num_bytes_fl = num_bytes as f64;
     if num_bytes_fl >= 1000000000.0 {
         format!("{:.2} GB", num_bytes_fl / 1000000000.0)
     } else if num_bytes_fl >= 1000000.0 {
@@ -90,8 +91,8 @@ fn get_size_label(num_bytes: i32) -> String {
 }
 
 fn get_hierarchy_obj(
-    root: &(String, String, i32),
-    children_map: &HashMap<String, Vec<(String, String, i32)>>,
+    root: &(String, String, u64),
+    children_map: &HashMap<String, Vec<(String, String, u64)>>,
     child_index: usize,
     indent_level: usize,
     unique_id: &mut usize) -> String
@@ -127,8 +128,8 @@ fn get_hierarchy_obj(
 }
 
 fn get_html_elems(
-    root: &(String, String, i32),
-    children_map: &HashMap<String, Vec<(String, String, i32)>>,
+    root: &(String, String, u64),
+    children_map: &HashMap<String, Vec<(String, String, u64)>>,
     indent_level: usize,
     unique_id: &mut usize) -> String
 {
@@ -160,7 +161,7 @@ fn get_html_elems(
         i = indent,
         id = id,
         name = root.1,
-        size_label = get_size_label(root.2),
+        size_label = get_size_label(root.2 * 1024),
         arrow_class = if children_elems == "" { "empty-arrow" } else { "arrow" },
         maybe_children =
             if children_elems == "" {
@@ -186,7 +187,7 @@ fn get_html_elems(
 // }
 
 fn run_and_get_output() -> Result<String, String> {
-    let cmd = "du -a";
+    let cmd = "du -a -k";
     let output = if cfg!(target_os = "windows") {
         Command::new("cmd")
             .args(&["/C", cmd])
