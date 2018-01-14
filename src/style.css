@@ -16,7 +16,13 @@
     margin: 16px 0;
     width: 15px;
     height: 20px;
-    background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='15' height='20'><polygon points='0,4 10,10 0,16' fill='#b8b4b4' /></svg>") no-repeat;
+    background: url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2715%27%20height%3D%2720%27%3E%3Cpolygon%20points%3D%270%2C4%2010%2C10%200%2C16%27%20fill%3D%27%23b8b4b4%27%20%2F%3E%3C%2Fsvg%3E") no-repeat;
+}
+.empty-arrow {
+    display: inline-block;
+    margin: 16px 0;
+    width: 15px;
+    height: 20px;
 }
 .size {
     font-family: monospace;

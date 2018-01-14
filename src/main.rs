@@ -19,6 +19,7 @@ fn main() {
             let tree = get_hierarchy_obj(
                     &(".".to_string(), ".".to_string(), parsed_info.1),
                     &parsed_info.0,
+                    0,
                     1,
                     &mut 0);
 
@@ -91,27 +92,24 @@ fn get_size_label(num_bytes: i32) -> String {
 fn get_hierarchy_obj(
     root: &(String, String, i32),
     children_map: &HashMap<String, Vec<(String, String, i32)>>,
+    child_index: usize,
     indent_level: usize,
     unique_id: &mut usize) -> String
 {
     // let indent = "  ".to_string().repeat(indent_level);
     let indent = "";
     let mut obj_str = format!(
-        // "{}{{\n{}  id: {},\n{}  parent: null,\n{}  expanded: false,\n{}  children: [",
-        "{}{{{}id:{},{}parent:null,{}expanded:false,{}children:[",
-        indent,
-        indent,
-        unique_id,
-        indent,
-        indent,
-        indent);
+        "{i}{{{i}id:{id},{i}parent:null,{i}expanded:false,{i}childIndex:{ci},{i}children:[",
+        i = indent,
+        ci = child_index,
+        id = unique_id);
     *unique_id += 1;
     let children_str = if let Some(children) = children_map.get(&root.0) {
         children
             .iter()
-            .map(|c| get_hierarchy_obj(c, children_map, indent_level + 2, unique_id))
+            .enumerate()
+            .map(|(i, c)| get_hierarchy_obj(c, children_map, i, indent_level + 2, unique_id))
             .collect::<Vec<String>>()
-            // .join(",\n")
             .join(",")
     } else {
         "".to_string()
@@ -138,7 +136,6 @@ fn get_html_elems(
     let id = *unique_id;
     *unique_id += 1;
 
-
     let children_elems = if let Some(children) = children_map.get(&root.0) {
         children
             .iter()
@@ -155,7 +152,7 @@ fn get_html_elems(
     format!(
 "{i}<div id=\"item{id}\" class=\"item\">
 {i}  <div id=\"item_row{id}\" class=\"item_row\">
-{i}    <div id=\"arrow{id}\" class=\"arrow\"></div>
+{i}    <div id=\"arrow{id}\" class=\"{arrow_class}\"></div>
 {i}    <p>{name}<span class=\"size\">({size_label})</span></p>
 {i}  </div>
 {maybe_children}{i}</div>
@@ -164,6 +161,7 @@ fn get_html_elems(
         id = id,
         name = root.1,
         size_label = get_size_label(root.2),
+        arrow_class = if children_elems == "" { "empty-arrow" } else { "arrow" },
         maybe_children =
             if children_elems == "" {
                 "".to_string()
@@ -188,7 +186,7 @@ fn get_html_elems(
 // }
 
 fn run_and_get_output() -> Result<String, String> {
-    let cmd = "du";
+    let cmd = "du -a";
     let output = if cfg!(target_os = "windows") {
         Command::new("cmd")
             .args(&["/C", cmd])
