@@ -16,6 +16,9 @@ fn main() {
 <head>
     <title>du view</title>
     <style>
+        .item_row {
+            width: 100%;
+        }
         .item {
             padding-left: 20px;
             margin: 5px;
@@ -24,11 +27,19 @@ fn main() {
         ul {
             padding: 0;
             list-style: none;
+            display: none;
         }
         .size {
             font-family: monospace;
             color: #7c7c7c;
             padding-left: 7px;
+        }
+        p {
+            display: inline-block;
+            vertical-align: top;
+        }
+        svg {
+            margin: 16px 0;
         }
     </style>    
 </head>
@@ -37,15 +48,33 @@ fn main() {
             let parsed_info = parse_output(output);
             // html.push_str(&process_output_to_html(output));
             html.push_str(
-                get_html_elems(
+                &get_html_elems(
                     &(".".to_string(), ".".to_string(), parsed_info.1),
                     &parsed_info.0,
                     0,
                     &mut 0));
             html.push_str(
-                format!(
-                    "</body>\n\n<script>\n{}\n</script>\n</html>\n",
-                    get_hierarchy_obj()));
+                &format!(
+"</body>
+
+<script>
+  function fillInParentProperties(tree, parent) {{
+    tree.parent = parent;
+    for (var i = 0; i < tree.children.length; i++) {{
+      fillInParentProperties(tree.children[i], tree);
+    }}
+  }}
+  var tree = {};
+  fillInParentProperties(tree, null);
+  console.log(tree);
+</script>
+</html>
+",
+                    get_hierarchy_obj(
+                        &(".".to_string(), ".".to_string(), parsed_info.1),
+                        &parsed_info.0,
+                        1,
+                        &mut 0)));
             println!("{}", html);
         },
         Err(err) => { println!("got err when running command and getting output: {}", err); },
@@ -79,33 +108,6 @@ fn parse_output(output: String) -> (HashMap<String, Vec<(String, String, i32)>>,
     (children, root_size)
 }
 
-fn process_output_to_html(output: String) -> String {
-    // full path -> (full path, relative path, byte size)
-    let mut children: HashMap<String, Vec<(String, String, i32)>> = HashMap::new();
-    let re = Regex::new(r"(\d+)\s+(.*)").unwrap();
-    let mut root_size = 0;
-    for line in output.lines() {
-        for cap in re.captures_iter(line) {
-            let item = &cap[2];
-            let size = &cap[1];
-            if item != "." {
-                let parent = Path::new(item).parent().unwrap().to_str().unwrap();
-                let children = children.entry(parent.to_string()).or_insert(Vec::new());
-                let relative_item = &item[parent.len()..];
-                // eprintln!("relative_item is {}, parent is {}, item is {}", relative_item, parent, item);
-                children.push(
-                    (item.to_string(),
-                     relative_item.to_string().trim_matches('/').to_string(),
-                     size.parse::<i32>().unwrap()));
-            } else {
-                root_size = cap[1].parse::<i32>().unwrap();
-            }
-        }
-    }
-
-    get_html_elems(&(".".to_string(), ".".to_string(), root_size), &children, 0, &mut 0)
-}
-
 fn get_size_label(num_bytes: i32) -> String {
     let num_bytes_fl = num_bytes as f32;
     if num_bytes_fl >= 1000000000.0 {
@@ -125,9 +127,11 @@ fn get_hierarchy_obj(
     indent_level: usize,
     unique_id: &mut usize) -> String
 {
-    let indent = "  ".to_string().repeat(indent_level);
+    // let indent = "  ".to_string().repeat(indent_level);
+    let indent = "";
     let mut obj_str = format!(
-        "{}{{\n{}  id:{},\n{}  parent: null,\n{}  expanded: false,\n{}  children: [",
+        // "{}{{\n{}  id: {},\n{}  parent: null,\n{}  expanded: false,\n{}  children: [",
+        "{}{{{}id:{},{}parent:null,{}expanded:false,{}children:[",
         indent,
         indent,
         unique_id,
@@ -138,13 +142,21 @@ fn get_hierarchy_obj(
     let children_str = if let Some(children) = children_map.get(&root.0) {
         children
             .iter()
-            .map(|c| get_hierarchy_obj(c, children_map, indent_level + 1, unique_id))
+            .map(|c| get_hierarchy_obj(c, children_map, indent_level + 2, unique_id))
             .collect::<Vec<String>>()
-            .join("\n")
+            // .join(",\n")
+            .join(",")
     } else {
         "".to_string()
     };
-    obj_str.push_str(&format!("{}]}}", children_str));
+    obj_str.push_str(
+        &format!(
+            // "{maybe_nl}{children}{maybe_nl}{maybe_indent}]\n{indent}}}",
+            "{maybe_nl}{children}{maybe_nl}{maybe_indent}]{indent}}}",
+            maybe_nl = "", //if children_str != "" { "\n" } else { "" },
+            maybe_indent = "", //if children_str != "" { format!("{}  ", indent) } else { "".to_string() },
+            children = children_str,
+            indent = indent));
 
     obj_str
 }
@@ -157,12 +169,21 @@ fn get_html_elems(
 {
     let indent = "  ".to_string().repeat(indent_level);
     let mut html = format!(
-        "{}<div id=\"item{}\" class=\"item\">\n{}  <p>{}<span class=\"size\">({})</span></p>\n",
+// {}  <svg width=\"20\" height=\"20\">   <polygon points=\"0,0 10,5 0,10\" />     <circle cx=\"10\" cy=\"10\" r=\"5\" stroke=\"green\" stroke-width=\"1\" fill=\"yellow\" /></svg>
+"{}<div id=\"item{}\" class=\"item\">
+{}  <div class=\"item_row\">
+{}    <svg width=\"15\" height=\"20\"><polygon points=\"0,4 10,10 0,16\" fill=\"#b8b4b4\" /></svg>
+{}    <p>{}<span class=\"size\">({})</span></p>
+{}  </div>
+",
         indent,
         unique_id,
         indent,
+        indent,
+        indent,
         root.1,
-        get_size_label(root.2));
+        get_size_label(root.2),
+        indent);
     *unique_id += 1;
     if let Some(children) = children_map.get(&root.0) {
         html.push_str(&format!("{}  <ul>\n", indent));
