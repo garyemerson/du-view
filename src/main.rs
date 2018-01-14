@@ -10,7 +10,8 @@ fn main() {
     match run_and_get_output() {
         Ok(output) => {
             // println!("{}", output);
-            let parsed_info = parse_output(output);
+            let mut parsed_info = parse_output(output);
+            sort_children_by_size(&mut parsed_info.0);
             let html_output = get_html_elems(
                     &(".".to_string(), ".".to_string(), parsed_info.1),
                     &parsed_info.0,
@@ -46,6 +47,12 @@ fn main() {
                 js = include_str!("script.js"));
         },
         Err(err) => { println!("got err when running command and getting output: {}", err); },
+    }
+}
+
+fn sort_children_by_size(children: &mut HashMap<String, Vec<(String, String, u64)>>) {
+    for v in children.values_mut() {
+        v.sort_by_key(|t| - (t.2 as i64));
     }
 }
 
@@ -100,7 +107,7 @@ fn get_hierarchy_obj(
     // let indent = "  ".to_string().repeat(indent_level);
     let indent = "";
     let mut obj_str = format!(
-        "{i}{{{i}id:{id},{i}parent:null,{i}expanded:false,{i}childIndex:{ci},{i}children:[",
+        "{i}{{{i}id:{id},{i}p:null,{i}x:false,{i}ci:{ci},{i}cc:[",
         i = indent,
         ci = child_index,
         id = unique_id);
@@ -133,7 +140,7 @@ fn get_html_elems(
     indent_level: usize,
     unique_id: &mut usize) -> String
 {
-    let indent = "  ".to_string().repeat(indent_level);
+    // let indent = "  ".to_string().repeat(indent_level);
     let id = *unique_id;
     *unique_id += 1;
 
@@ -141,24 +148,29 @@ fn get_html_elems(
         children
             .iter()
             .map(|c|
-                format!("{i}    <li>\n{cc}{i}    </li>",
-                    i = indent,
+                format!(
+                    // "{i}    <li>\n{cc}{i}    </li>",
+                    "<li>{cc}</li>",
+                    // i = indent,
                     cc = &get_html_elems(c, children_map, indent_level + 3, unique_id)))
             .collect::<Vec<String>>()
-            .join("\n")
+            .join("")
     } else {
         "".to_string()
     };
 
     format!(
-"{i}<div id=\"item{id}\" class=\"item\">
-{i}  <div id=\"item_row{id}\" class=\"item_row\">
-{i}    <div id=\"arrow{id}\" class=\"{arrow_class}\"></div>
-{i}    <p>{name}<span class=\"size\">({size_label})</span></p>
-{i}  </div>
-{maybe_children}{i}</div>
-",
-        i = indent,
+// "{i}<div id=\"item{id}\" class=\"item\">
+// {i}  <div id=\"item_row{id}\" class=\"item_row\">
+// {i}    <div id=\"arrow{id}\" class=\"{arrow_class}\"></div>
+// {i}    <p>{name}<span class=\"size\">({size_label})</span></p>
+// {i}  </div>
+// {maybe_children}{i}</div>
+// ",
+"<div id=\"item{id}\" class=\"item\"><div id=\"item_row{id}\" class=\"item_row\">\
+<div id=\"arrow{id}\" class=\"{arrow_class}\"></div><p>{name}<span class=\"size\">\
+({size_label})</span></p></div>{maybe_children}</div>",
+        // i = indent,
         id = id,
         name = root.1,
         size_label = get_size_label(root.2 * 1024),
@@ -168,8 +180,9 @@ fn get_html_elems(
                 "".to_string()
             } else {
                 format!(
-                    "{i}  <ul id=\"children{id}\" class=\"children\">\n{cc}\n{i}  </ul>\n",
-                    i = indent,
+                    // "{i}  <ul id=\"children{id}\" class=\"children\">\n{cc}\n{i}  </ul>\n",
+                    "<ul id=\"children{id}\" class=\"children\">{cc}</ul>",
+                    // i = indent,
                     id = id,
                     cc = children_elems)
             })

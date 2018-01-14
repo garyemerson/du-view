@@ -29,12 +29,12 @@ function handleKey(event) {
         case "ArrowLeft":
             console.log("go Left with selectedNode ", selectedNode.id);
             // TODO: if already collapsed, goto to parent
-            if (!selectedNode.expanded && selectedNode.parent !== null) {
+            if (!selectedNode.x && selectedNode.p !== null) {
                 document.getElementById("item_row" + selectedNode.id).style.background = "white";
-                document.getElementById("item_row" + selectedNode.parent.id).style.background = "lightblue";
-                selectedNode = selectedNode.parent;
+                document.getElementById("item_row" + selectedNode.p.id).style.background = "lightblue";
+                selectedNode = selectedNode.p;
             } else {
-                selectedNode.expanded = false;
+                selectedNode.x = false;
                 document.getElementById("children" + selectedNode.id).style.display = "none";
                 document.getElementById("arrow" + selectedNode.id).style.background = arrowCollapsed;
             }
@@ -43,8 +43,8 @@ function handleKey(event) {
 
         case "ArrowRight":
             console.log("go Right with selectedNode ", selectedNode.id);
-            if (selectedNode.children.length > 0) {
-                selectedNode.expanded = true;
+            if (selectedNode.cc.length > 0) {
+                selectedNode.x = true;
                 document.getElementById("children" + selectedNode.id).style.display = "initial";
                 document.getElementById("arrow" + selectedNode.id).style.background = arrowExpanded;
             }
@@ -72,57 +72,59 @@ function handleKey(event) {
 }
 function getLastNode(node) {
     var curr = node;
-    while (curr.children.length > 0 && curr.expanded) {
-        curr = curr.children[curr.children.length - 1];
+    while (curr.cc.length > 0 && curr.x) {
+        curr = curr.cc[curr.cc.length - 1];
     }
     return curr;
 }
 function getRoot(node) {
     var curr = node;
-    while (curr.parent !== null) {
-        curr = curr.parent;
+    while (curr.p !== null) {
+        curr = curr.p;
     }
     return curr;
 }
 function getNextUpNode(node) {
-    if (node.parent === null) {
+    if (node.p === null) {
         return null;
-    } else if (node.childIndex === 0) {
-        return node.parent;
+    } else if (node.ci === 0) {
+        return node.p;
     } else {
-        var curr = node.parent.children[node.childIndex - 1];
-        while (curr.children.length > 0 && curr.expanded) {
-            curr = curr.children[curr.children.length - 1];
+        var curr = node.p.cc[node.ci - 1];
+        while (curr.cc.length > 0 && curr.x) {
+            curr = curr.cc[curr.cc.length - 1];
         }
         return curr;
     }
 }
 function getNextDownNode(node) {
-    if (node.children !== null && node.expanded) {
-        return node.children[0];
-    } else if (node.parent !== null && node.childIndex !== node.parent.children.length - 1) {
-        return node.parent.children[node.childIndex + 1];
+    if (node.cc !== null && node.x) {
+        return node.cc[0];
+    } else if (node.p !== null && node.ci !== node.p.cc.length - 1) {
+        return node.p.cc[node.ci + 1];
     } else {
         var curr = node;
-        while (curr.parent !== null) {
-            if (curr.childIndex !== curr.parent.children.length - 1) {
-                return curr.parent.children[curr.childIndex + 1];
+        while (curr.p !== null) {
+            if (curr.ci !== curr.p.cc.length - 1) {
+                return curr.p.cc[curr.ci + 1];
             }
-            curr = curr.parent;
+            curr = curr.p;
         }
         return null;
     }
 }
 function fillInParentProperties(node, parent) {
-    node.parent = parent;
-    for (var i = 0; i < node.children.length; i++) {
-      fillInParentProperties(node.children[i], node);
+    node.p = parent;
+    for (var i = 0; i < node.cc.length; i++) {
+      fillInParentProperties(node.cc[i], node);
     }
 }
 
 console.log("filling in parents...")
+var t0 = performance.now();
 fillInParentProperties(treeRoot, null);
-console.log("done")
+var t1 = performance.now();
+console.log("Done. Time elapsed: " + (t1 - t0) + " milliseconds.");
 console.log(treeRoot);
 
 var selectedNode = treeRoot;
