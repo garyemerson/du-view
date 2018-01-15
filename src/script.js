@@ -152,3 +152,5 @@ console.log(treeRoot);
 
 var selectedNode = treeRoot;
 document.getElementById("item_row0").style.background = "lightblue";
+
+document.getElementById("loading").style.display = "none";

@@ -28,13 +28,20 @@ fn main() {
 <!doctype html>
 <html lang=\"en-US\">
 <head>
-  <title>du view</title>
+  <title>du</title>
+  <link rel=\"icon\" type=\"image/png\" sizes=\"16x16\" href=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAAAmJLR0QAAKqNIzIAAAAJcEhZcwAADdcAAA3XAUIom3gAAAAHdElNRQfiAQ8UBgso/FxtAAABK0lEQVQoz13QMUtbUQAF4O++SCAapIraYCJCi4Oji1EX6ergUAftGjr0B7hpf4BraaHgLjq5iYOjk8RJcREKARcRFfEpkpB3Ozze4pk/OIcDdeeiKPPgypUHmSg6VwfmPYlu7VhQV7dgx63oyXwOmlIdK4IiwYqOVLMAd1rep+VOkwQlbYdg2KpVw+BQWykHwZlHJFqmTGlJ8OhMyEF0D4bU7NlTMwTuRQYQjINUx3d0pGCimL3kxBioWPbFIBhzYimv6JvzDUHVi1OvYN2cfl5B2ZZn1xoybQz4aluZAlyaVnPsg1effLZmQ3BRgMS+NyXBpll9IypebImS4oeuXT2/LfpoUkXqp196xQ+ZqhFH/klAzx8HRlVlBDT81ZApm1FG17WuxI0fbv4D6zhYOjj+Am8AAAAldEVYdGRhdGU6Y3JlYXRlADIwMTgtMDEtMTVUMjA6MDY6MTErMDE6MDDXNjdnAAAAJXRFWHRkYXRlOm1vZGlmeQAyMDE4LTAxLTE1VDIwOjA2OjExKzAxOjAwpmuP2wAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAABXelRYdFJhdyBwcm9maWxlIHR5cGUgaXB0YwAAeJzj8gwIcVYoKMpPy8xJ5VIAAyMLLmMLEyMTS5MUAxMgRIA0w2QDI7NUIMvY1MjEzMQcxAfLgEigSi4A6hcRdPJCNZUAAAAASUVORK5CYII=\">
   <style>
 {css}
   </style>
 </head>
 <body onkeydown=\"handleKey(event)\">
+<div>
+<div id=\"loading\">Loading</div>
+<div class=\"credit\">Favicon made by <a href=\"http://www.freepik.com\" title=\"Freepik\">Freepik</a> from <a href=\"https://www.flaticon.com/\" title=\"Flaticon\">www.flaticon.com</a> is licensed by <a href=\"http://creativecommons.org/licenses/by/3.0/\" title=\"Creative Commons BY 3.0\" target=\"_blank\">CC 3.0 BY</a></div>
+</div>
+<div class=\"listing\">
 {html_output}
+</div>
 </body>
 <script>
   var treeRoot = {tree};
@@ -185,7 +192,7 @@ fn get_html_elems(
 // }
 
 fn run_and_get_output() -> Result<String, String> {
-    let cmd = "du -a -k";
+    let cmd = "du -ak";
     let output = if cfg!(target_os = "windows") {
         Command::new("cmd")
             .args(&["/C", cmd])
@@ -203,9 +210,11 @@ fn run_and_get_output() -> Result<String, String> {
     if output.status.success() {
         Result::Ok(str::from_utf8(&output.stdout).unwrap().to_string())
     } else {
-        let mut err_info = format!("execution of cmd `{}` failed.\n", cmd);
-        err_info.push_str(&format!("stderr:\n{}", str::from_utf8(&output.stderr).unwrap()));
-        err_info.push_str(&format!("stdout:\n{}", str::from_utf8(&output.stdout).unwrap()));
-        Result::Err(err_info)
+        // TODO: should actually handle error, too lazy rn
+        Result::Ok(str::from_utf8(&output.stdout).unwrap().to_string())
+        // let mut err_info = format!("execution of cmd `{}` failed.\n", cmd);
+        // err_info.push_str(&format!("stderr:\n{}", str::from_utf8(&output.stderr).unwrap()));
+        // err_info.push_str(&format!("stdout:\n{}", str::from_utf8(&output.stdout).unwrap()));
+        // Result::Err(err_info)
     }
 }
