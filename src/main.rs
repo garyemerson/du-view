@@ -3,22 +3,32 @@ extern crate regex;
 use std::path::Path;
 use std::collections::HashMap;
 use regex::Regex;
-use std::process::Command;
-use std::str;
+use std::env;
+use std::io;
+use std::io::Read;
 
 fn main() {
-    match run_and_get_output() {
+    let unit_size = match env::args().nth(1) {
+        Some(ref arg) if arg == "-k" => {
+            1024
+        },
+        _ => { 512 }
+    };
+
+    match read_input() {
         Ok(output) => {
             // println!("{}", output);
             let mut parsed_info = parse_output(output);
             sort_children_by_size(&mut parsed_info.0);
+            // let root = get_root(parsed_info.0);
             let html_output = get_html_elems(
-                &(".".to_string(), ".".to_string(), parsed_info.1),
+                &(parsed_info.2.clone(), parsed_info.2.clone(), parsed_info.1),
                 &parsed_info.0,
                 0,
-                &mut 0);
+                &mut 0,
+                unit_size);
             let tree = get_hierarchy_obj(
-                &(".".to_string(), ".".to_string(), parsed_info.1),
+                &(parsed_info.2.clone(), parsed_info.2.clone(), parsed_info.1),
                 &parsed_info.0,
                 0,
                 1,
@@ -63,18 +73,27 @@ fn sort_children_by_size(children: &mut HashMap<String, Vec<(String, String, u64
     }
 }
 
-// (children map, root size)
-fn parse_output(output: String) -> (HashMap<String, Vec<(String, String, u64)>>, u64) {
+// (children map, root size, root name)
+fn parse_output(output: String) -> (HashMap<String, Vec<(String, String, u64)>>, u64, String) {
     // full path -> (full path, relative path, byte size)
     let mut children: HashMap<String, Vec<(String, String, u64)>> = HashMap::new();
     let re = Regex::new(r"(\d+)\s+(.*)").unwrap();
     let mut root_size = 0;
+    let mut min = usize::max_value();
+    let mut root = "".to_string();
     for line in output.lines() {
         for cap in re.captures_iter(line) {
             let item = &cap[2];
             let size = &cap[1];
-            if item != "." {
-                let parent = Path::new(item).parent().unwrap().to_str().unwrap();
+
+            if item.len() < min {
+                min = item.len();
+                root = item.to_string();
+                root_size = cap[1].parse::<u64>().unwrap();
+            }
+
+            // eprintln!("found match with line {}, item is {} and size is {}", line, item, size);
+            if let Some(parent) = Path::new(item).parent().map(|p| p.to_str().unwrap()) {
                 let children = children.entry(parent.to_string()).or_insert(Vec::new());
                 let relative_item = &item[parent.len()..];
                 // eprintln!("relative_item is {}, parent is {}, item is {}", relative_item, parent, item);
@@ -82,13 +101,11 @@ fn parse_output(output: String) -> (HashMap<String, Vec<(String, String, u64)>>,
                     (item.to_string(),
                      relative_item.to_string().trim_matches('/').to_string(),
                      size.parse::<u64>().unwrap()));
-            } else {
-                root_size = cap[1].parse::<u64>().unwrap();
             }
         }
     }
 
-    (children, root_size)
+    (children, root_size, root)
 }
 
 fn get_size_label(num_bytes: u64) -> String {
@@ -143,7 +160,8 @@ fn get_html_elems(
     root: &(String, String, u64),
     children_map: &HashMap<String, Vec<(String, String, u64)>>,
     indent_level: usize,
-    unique_id: &mut usize) -> String
+    unique_id: &mut usize,
+    unit_size: i32) -> String
 {
     let id = *unique_id;
     *unique_id += 1;
@@ -154,7 +172,7 @@ fn get_html_elems(
             .map(|c|
                 format!(
                     "<li>{cc}</li>",
-                    cc = &get_html_elems(c, children_map, indent_level + 3, unique_id)))
+                    cc = &get_html_elems(c, children_map, indent_level + 3, unique_id, unit_size)))
             .collect::<Vec<String>>()
             .join("")
     } else {
@@ -167,7 +185,7 @@ fn get_html_elems(
 ({size_label})</span></p></div>{maybe_children}</div>",
         id = id,
         name = root.1,
-        size_label = get_size_label(root.2 * 1024),
+        size_label = get_size_label(root.2 * (unit_size as u64)),
         arrow_class = if children_elems == "" { "empty-arrow" } else { "arrow" },
         maybe_children =
             if children_elems == "" {
@@ -191,30 +209,9 @@ fn get_html_elems(
 //     }
 // }
 
-fn run_and_get_output() -> Result<String, String> {
-    let cmd = "du -ak";
-    let output = if cfg!(target_os = "windows") {
-        Command::new("cmd")
-            .args(&["/C", cmd])
-            .output()
-            .map_err(|e| format!("failed to execute process for command `{}`: {}", cmd, e))
-    } else {
-        Command::new("sh")
-            .arg("-c")
-            .arg(cmd)
-            .output()
-            .map_err(|e| format!("failed to execute process for command `{}`: {}", cmd, e))
-    };
-
-    let output = output?;
-    if output.status.success() {
-        Result::Ok(str::from_utf8(&output.stdout).unwrap().to_string())
-    } else {
-        // TODO: should actually handle error, too lazy rn
-        Result::Ok(str::from_utf8(&output.stdout).unwrap().to_string())
-        // let mut err_info = format!("execution of cmd `{}` failed.\n", cmd);
-        // err_info.push_str(&format!("stderr:\n{}", str::from_utf8(&output.stderr).unwrap()));
-        // err_info.push_str(&format!("stdout:\n{}", str::from_utf8(&output.stdout).unwrap()));
-        // Result::Err(err_info)
-    }
+fn read_input() -> Result<String, String> {
+    let mut buffer = String::new();
+    io::stdin().read_to_string(&mut buffer)
+        .map_err(|e| format!("failed to read from stdin: {}", e))?;
+    Ok(buffer)
 }
