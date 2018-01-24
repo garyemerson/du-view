@@ -1,6 +1,6 @@
 # du-view
 
-du-view converts the output of the du (disk usage) program to an html page that displays your files as a hierarchical and collapsible list.
+du-view converts the output of the du (disk usage) program to an html page that displays your files as a hierarchical and collapsible list that can be interacted with via arrow keys.
 
 ### Usage
 
