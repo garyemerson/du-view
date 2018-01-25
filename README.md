@@ -6,7 +6,7 @@ du-view converts the output of the du (disk usage) program to an html page that 
 
 See what's taking up space in your home directory:
 ```
-$ du ~ | du-view > usage.html
+du ~ | du-view > usage.html
 ```
 
 
