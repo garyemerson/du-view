@@ -12,7 +12,7 @@ du ~ | du-view > usage.html
 
 
 
-Check usage on a remote machine, telling du to use a block size of 1024 bytes with the `-k` option and informing du-view to it should interpret the block size as 1024 bytes as well:
+Check usage on a remote machine, telling du to use a block size of 1024 bytes with the `-k` option and informing du-view it should interpret the block size as 1024 bytes as well:
 ```
 ssh bob@example.com 'du -k /' | du-view -k > usage.html
 ```
