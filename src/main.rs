@@ -83,7 +83,7 @@ fn parse_output(output: String) -> (HashMap<String, Vec<(String, String, u64)>>,
     let mut root = "".to_string();
     for line in output.lines() {
         for cap in re.captures_iter(line) {
-            let item = &cap[2];
+            let item = &cap[2].trim_right_matches(|c| c == '/' || c == '\\');
             let size = &cap[1];
 
             if item.len() < min {
@@ -105,6 +105,7 @@ fn parse_output(output: String) -> (HashMap<String, Vec<(String, String, u64)>>,
         }
     }
 
+    // eprintln!("root is {}", root);
     (children, root_size, root)
 }
 
@@ -129,6 +130,12 @@ fn get_hierarchy_obj(
     unique_id: &mut usize) -> String
 {
     let indent = "";
+
+    // id: unique identifier
+    // p: parent
+    // x: expanded (bool)
+    // ci: child index
+    // cc: children
     let mut obj_str = format!(
         "{i}{{{i}id:{id},{i}p:null,{i}x:false,{i}ci:{ci},{i}cc:[",
         i = indent,
