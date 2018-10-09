@@ -17,7 +17,7 @@ function handleKey(event) {
             break;
 
         case "ArrowDown":
-            // console.log("go Down with selectedNode ", selectedNode.id);
+            console.log("go Down with selectedNode ", selectedNode.id);
             var next = getNextDownNode(selectedNode);
             if (next !== null && next.id !== selectedNode.id) {
                 document.getElementById("item_row" + selectedNode.id).style.background = "white";

@@ -18,46 +18,47 @@ fn main() {
     match read_input() {
         Ok(output) => {
             // println!("{}", output);
-            let mut parsed_info = parse_output(output);
-            sort_children_by_size(&mut parsed_info.0);
-            // let root = get_root(parsed_info.0);
+            let (mut children, root_size, root) = parse_output(output);
+            // eprintln!("children map has len {}", children.len());
+            sort_children_by_size(&mut children);
+            // let root = get_root(children);
             let html_output = get_html_elems(
-                &(parsed_info.2.clone(), parsed_info.2.clone(), parsed_info.1),
-                &parsed_info.0,
+                &(root.clone(), root.clone(), root_size),
+                &children,
                 0,
                 &mut 0,
                 unit_size);
             let tree = get_hierarchy_obj(
-                &(parsed_info.2.clone(), parsed_info.2.clone(), parsed_info.1),
-                &parsed_info.0,
+                &(root.clone(), root.clone(), root_size),
+                &children,
                 0,
                 1,
                 &mut 0);
 
             println!("
-<!doctype html>
-<html lang=\"en-US\">
-<head>
-  <title>du</title>
-  <link rel=\"icon\" type=\"image/png\" sizes=\"16x16\" href=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAAAmJLR0QAAKqNIzIAAAAJcEhZcwAADdcAAA3XAUIom3gAAAAHdElNRQfiAQ8UBgso/FxtAAABK0lEQVQoz13QMUtbUQAF4O++SCAapIraYCJCi4Oji1EX6ergUAftGjr0B7hpf4BraaHgLjq5iYOjk8RJcREKARcRFfEpkpB3Ozze4pk/OIcDdeeiKPPgypUHmSg6VwfmPYlu7VhQV7dgx63oyXwOmlIdK4IiwYqOVLMAd1rep+VOkwQlbYdg2KpVw+BQWykHwZlHJFqmTGlJ8OhMyEF0D4bU7NlTMwTuRQYQjINUx3d0pGCimL3kxBioWPbFIBhzYimv6JvzDUHVi1OvYN2cfl5B2ZZn1xoybQz4aluZAlyaVnPsg1effLZmQ3BRgMS+NyXBpll9IypebImS4oeuXT2/LfpoUkXqp196xQ+ZqhFH/klAzx8HRlVlBDT81ZApm1FG17WuxI0fbv4D6zhYOjj+Am8AAAAldEVYdGRhdGU6Y3JlYXRlADIwMTgtMDEtMTVUMjA6MDY6MTErMDE6MDDXNjdnAAAAJXRFWHRkYXRlOm1vZGlmeQAyMDE4LTAxLTE1VDIwOjA2OjExKzAxOjAwpmuP2wAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAABXelRYdFJhdyBwcm9maWxlIHR5cGUgaXB0YwAAeJzj8gwIcVYoKMpPy8xJ5VIAAyMLLmMLEyMTS5MUAxMgRIA0w2QDI7NUIMvY1MjEzMQcxAfLgEigSi4A6hcRdPJCNZUAAAAASUVORK5CYII=\">
-  <style>
-{css}
-  </style>
-</head>
-<body onkeydown=\"handleKey(event)\">
-<div>
-<div id=\"loading\">Loading</div>
-<div class=\"credit\">Favicon made by <a href=\"http://www.freepik.com\" title=\"Freepik\">Freepik</a> from <a href=\"https://www.flaticon.com/\" title=\"Flaticon\">www.flaticon.com</a> is licensed by <a href=\"http://creativecommons.org/licenses/by/3.0/\" title=\"Creative Commons BY 3.0\" target=\"_blank\">CC 3.0 BY</a></div>
-</div>
-<div class=\"listing\">
-{html_output}
-</div>
-</body>
-<script>
-  var treeRoot = {tree};
-{js}
-</script>
-</html>\n",
+                <!doctype html>
+                <html lang=\"en-US\">
+                <head>
+                  <title>du</title>
+                  <link rel=\"icon\" type=\"image/png\" sizes=\"16x16\" href=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAAAmJLR0QAAKqNIzIAAAAJcEhZcwAADdcAAA3XAUIom3gAAAAHdElNRQfiAQ8UBgso/FxtAAABK0lEQVQoz13QMUtbUQAF4O++SCAapIraYCJCi4Oji1EX6ergUAftGjr0B7hpf4BraaHgLjq5iYOjk8RJcREKARcRFfEpkpB3Ozze4pk/OIcDdeeiKPPgypUHmSg6VwfmPYlu7VhQV7dgx63oyXwOmlIdK4IiwYqOVLMAd1rep+VOkwQlbYdg2KpVw+BQWykHwZlHJFqmTGlJ8OhMyEF0D4bU7NlTMwTuRQYQjINUx3d0pGCimL3kxBioWPbFIBhzYimv6JvzDUHVi1OvYN2cfl5B2ZZn1xoybQz4aluZAlyaVnPsg1effLZmQ3BRgMS+NyXBpll9IypebImS4oeuXT2/LfpoUkXqp196xQ+ZqhFH/klAzx8HRlVlBDT81ZApm1FG17WuxI0fbv4D6zhYOjj+Am8AAAAldEVYdGRhdGU6Y3JlYXRlADIwMTgtMDEtMTVUMjA6MDY6MTErMDE6MDDXNjdnAAAAJXRFWHRkYXRlOm1vZGlmeQAyMDE4LTAxLTE1VDIwOjA2OjExKzAxOjAwpmuP2wAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAABXelRYdFJhdyBwcm9maWxlIHR5cGUgaXB0YwAAeJzj8gwIcVYoKMpPy8xJ5VIAAyMLLmMLEyMTS5MUAxMgRIA0w2QDI7NUIMvY1MjEzMQcxAfLgEigSi4A6hcRdPJCNZUAAAAASUVORK5CYII=\">
+                  <style>
+                    {css}
+                  </style>
+                </head>
+                <body onkeydown=\"handleKey(event)\">
+                <div>
+                <div id=\"loading\">Loading</div>
+                <div class=\"credit\">Favicon made by <a href=\"http://www.freepik.com\" title=\"Freepik\">Freepik</a> from <a href=\"https://www.flaticon.com/\" title=\"Flaticon\">www.flaticon.com</a> is licensed by <a href=\"http://creativecommons.org/licenses/by/3.0/\" title=\"Creative Commons BY 3.0\" target=\"_blank\">CC 3.0 BY</a></div>
+                </div>
+                <div class=\"listing\">
+                  {html_output}
+                </div>
+                </body>
+                <script>
+                  var treeRoot = {tree};
+                  {js}
+                </script>
+                </html>\n",
                 css = include_str!("style.css"),
                 html_output = html_output,
                 tree = tree,
@@ -81,9 +82,14 @@ fn parse_output(output: String) -> (HashMap<String, Vec<(String, String, u64)>>,
     let mut root_size = 0;
     let mut min = usize::max_value();
     let mut root = "".to_string();
+    let mut count = 0;
     for line in output.lines() {
         for cap in re.captures_iter(line) {
-            let item = &cap[2].trim_right_matches(|c| c == '/' || c == '\\');
+            let item = if &cap[2] == "/" || &cap[2] == "\\" {
+                &cap[2]
+            } else {
+                &cap[2].trim_right_matches(|c| c == '/' || c == '\\')
+            };
             let size = &cap[1];
 
             if item.len() < min {
@@ -103,9 +109,11 @@ fn parse_output(output: String) -> (HashMap<String, Vec<(String, String, u64)>>,
                      size.parse::<u64>().unwrap()));
             }
         }
+        count += 1;
     }
 
-    // eprintln!("root is {}", root);
+    // eprintln!("processed {} lines", count);
+    // eprintln!("root is '{}'", root);
     (children, root_size, root)
 }
 
@@ -150,7 +158,7 @@ fn get_hierarchy_obj(
             .collect::<Vec<String>>()
             .join(",")
     } else {
-        "".to_string()
+        String::new()
     };
     obj_str.push_str(
         &format!(

@@ -1,0 +1,37 @@
+TODO
+----
+* fix bug where `du -a Windows | du-view > ~/Desktop/usage.html` works fine but `du -a Windows/ | du-view > ~/Desktop/usage.html` outputs only a single row
+* allow page up/page down to work. this could be done by generalizing getNextUpNode and getNextDownNode to take as input a number for how many entries to go up. Arrows would be 1 and page up/page down would be some higher number.
+
+iterate hierarchy tree
+----------------------
+How to iterate thru hierarchy tree list that looks something like:
+
+dir0
+    dir1
+        dir2
+            dir4
+                file5
+                file6
+            file1
+            file2
+        file7
+    dir3
+        file3
+        file4
+    file8
+
+Essentially, just do a dfs search like:
+
+iter(tree) {
+    if (tree.children is empty) {
+        return list with just element tree
+    }
+
+    list elems
+    foreach c in tree.children { // in order
+        elems.add(iter(c))
+    }
+
+    return elems
+}
