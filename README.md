@@ -19,4 +19,4 @@ ssh bob@example.com 'du -k /' | du-view -k > usage.html
 
 ### Demo
 
-![demo](demo.gif)
+![demo](demo/demo.gif)
